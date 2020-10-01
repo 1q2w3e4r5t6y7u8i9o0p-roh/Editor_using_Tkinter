@@ -1,117 +1,124 @@
-from Tkinter import *
+
+from tkinter import *
+from tkinter.messagebox import showinfo
+from tkinter.filedialog import askopenfilename, asksaveasfilename
 import os
-import  Tkinter, tkFileDialog
-from tkMessageBox import *
+
+def newFile():
+    global file
+    root.title("Untitled - Notepad")
+    file = None
+    TextArea.delete(1.0, END)
 
 
-def open_command_event(event):
-    open_command()
-
-def open_command():
-    global current_file
-    file = tkFileDialog.askopenfilename(initialdir='/', title='Select a file')
-    current_file = file
-    #print(file)
-    #displaying content of the file in editor
-    with open(file, 'r+') as file:
-        contents = file.read()
-        text.insert('1.0', contents)
-
-def newfile_command_event(event):
-    newfile_command()
-
-def newfile_command():
-    text.delete('1.0', END)
-
-
-def save_command_event(event):
-    save_command()
-
-def save_command():
-    global current_file
-    print(current_file)
-    contents=text.get('1.0','end-1c')
-    if current_file is None:
-        saveas_command()
+def openFile():
+    global file
+    file = askopenfilename(defaultextension=".txt",
+                           filetypes=[("All Files", "*.*"),
+                                     ("Text Documents", "*.txt")])
+    if file == "":
+        file = None
     else:
-        with open(current_file,'w') as fp:
-            fp.write(contents)
+        root.title(os.path.basename(file) + " - Notepad")
+        TextArea.delete(1.0, END)
+        f = open(file, "r")
+        TextArea.insert(1.0, f.read())
+        f.close()
 
 
-def saveas_command():
-    contents=text.get('1.0','end-1c')
-    file = tkFileDialog.asksaveasfile(mode='w', filetypes=[('all files', '.*'), ('text files', '.txt')])
-    file.write(contents)
-    file.close()
+def saveFile():
+    global file
+    if file == None:
+        file = asksaveasfilename(initialfile = 'Untitled.txt', defaultextension=".txt",
+                           filetypes=[("All Files", "*.*"),
+                                     ("Text Documents", "*.txt")])
+        if file =="":
+            file = None
 
-def exit_command():
-    if(askyesno('Are you sure','All the unsaved worked will be discarded. Are you sure to exit?')):
-        window.destroy()
+        else:
+            #Save as a new file
+            f = open(file, "w")
+            f.write(TextArea.get(1.0, END))
+            f.close()
 
-def copy_command():
-    print('copy')
-
-def statusbar_command():
-    global current_file
-    status_bar = Label(window,text=current_file, bd=1, relief = SUNKEN,anchor=W)
-    if(var.get()):
-        status_bar.pack(side=BOTTOM, fill=X)
+            root.title(os.path.basename(file) + " - Notepad")
+            print("File Saved")
     else:
-        status_bar.pack_forget()
+        # Save the file
+        f = open(file, "w")
+        f.write(TextArea.get(1.0, END))
+        f.close()
 
 
-window = Tk()
-window.geometry('500x500')
-window.title('Editor')
-text = Text(window)
-text.pack()
-window.protocol("WM_DELETE_WINDOW", exit_command)
+def quitApp():
+    root.destroy()
 
-#shortcuts
-window.bind('<Control-s>',save_command_event)
-window.bind('<Control-n>',newfile_command_event)
-window.bind('<Control-o>',open_command_event)
+def cut():
+    TextArea.event_generate(("<>"))
 
-menubar = Menu(window)
-window.config(menu = menubar)
+def copy():
+    TextArea.event_generate(("<>"))
 
-submenu1 = Menu(menubar)
-menubar.add_cascade(label='File', menu=submenu1)
+def paste():
+    TextArea.event_generate(("<>"))
 
-#file menu
-submenu1.add_cascade(label='New File   Cntrl+N', command=newfile_command)
-submenu1.add_cascade(label='Open...    Cntrl+O', command=open_command)
-submenu1.add_cascade(label='Save       Cntrl+S', command=save_command)
-submenu1.add_cascade(label='Save As', command=saveas_command)
-submenu1.add_cascade(label='Exit', command=exit_command)
+def about():
+    showinfo("Notepad", "Notepad by Code With Harry")
 
+if __name__ == '__main__':
+    #Basic tkinter setup
+    root = Tk()
+    root.title("Untitled - Notepad")
+    root.geometry("788x646")
 
-submenu2 = Menu(menubar)
-menubar.add_cascade(label='Edit', menu=submenu2)
-#Edit Menu
-submenu2.add_cascade(label='Undo    Cntrl+Z')
-submenu2.add_cascade(label='Cut    Cntrl+X')
-submenu2.add_cascade(label='Paste  Cntrl+V')
-submenu2.add_cascade(label='Copy   Cntrl+C')
+    #Add TextArea
+    TextArea = Text(root, font="lucida 13")
+    file = None
+    TextArea.pack(expand=True, fill=BOTH)
 
+    # Lets create a menubar
+    MenuBar = Menu(root)
 
+    #File Menu Starts
+    FileMenu = Menu(MenuBar, tearoff=0)
+    # To open new file
+    FileMenu.add_command(label="New", command=newFile)
 
-submenu3 = Menu(menubar)
-menubar.add_cascade(label='View', menu=submenu3)
-#search menu
-var = Tkinter.IntVar()
-submenu3.add_checkbutton(label='Status Bar', variable = var, command=statusbar_command)
+    #To Open already existing file
+    FileMenu.add_command(label="Open", command = openFile)
 
+    # To save the current file
 
+    FileMenu.add_command(label = "Save", command = saveFile)
+    FileMenu.add_separator()
+    FileMenu.add_command(label = "Exit", command = quitApp)
+    MenuBar.add_cascade(label = "File", menu=FileMenu)
+    # File Menu ends
 
-submenu4 = Menu(menubar)
-menubar.add_cascade(label='Help', menu=submenu4)
-#help Menu
-submenu4.add_cascade(label='View Help')
-submenu4.add_cascade(label='About us')
+    # Edit Menu Starts
+    EditMenu = Menu(MenuBar, tearoff=0)
+    #To give a feature of cut, copy and paste
+    EditMenu.add_command(label = "Cut", command=cut)
+    EditMenu.add_command(label = "Copy", command=copy)
+    EditMenu.add_command(label = "Paste", command=paste)
 
+    MenuBar.add_cascade(label="Edit", menu = EditMenu)
 
+    # Edit Menu Ends
 
+    # Help Menu Starts
+    HelpMenu = Menu(MenuBar, tearoff=0)
+    HelpMenu.add_command(label = "About Notepad", command=about)
+    MenuBar.add_cascade(label="Help", menu=HelpMenu)
 
+    # Help Menu Ends
 
-window.mainloop()
+    root.config(menu=MenuBar)
+
+    #Adding Scrollbar using rules from Tkinter lecture no 22
+    Scroll = Scrollbar(TextArea)
+    Scroll.pack(side=RIGHT,  fill=Y)
+    Scroll.config(command=TextArea.yview)
+    TextArea.config(yscrollcommand=Scroll.set)
+
+    root.mainloop()
